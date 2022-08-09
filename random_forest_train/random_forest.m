@@ -15,7 +15,7 @@ function maccu = random_forest(mdata, tree_num)
     %       to default (100 trees)
     %   outputs:
     %       maccu: model accuracy, in percentage
-    %       feature importance plot
+    %       an additional feature importance plot
 
 
     %determine num of trees

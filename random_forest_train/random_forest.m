@@ -1,5 +1,5 @@
 
-function maccu = random_forest(mdata, tree_num)
+function maccu = random_forest(mdata, is_affect, tree_num, hold_out, feature_names)
     %creates a random forest model from the given data & number of trees
     %returns the percent accuracy of the model (maccu) & a feature
     %importance plot
@@ -7,12 +7,25 @@ function maccu = random_forest(mdata, tree_num)
     %       mdata: A [m-by-n] matrix, where n is the number of variables
     %       present in the data (n>=3).
     %       In addition, the columns must be in the following order:
-    %           time  bpm  rr  ......  is_affect 
-    %       (i.e. time must be 1st col & is_affect must be last col)
+    %           time  ...... 
+    %       (i.e. time must be 1st col & everything else follows)
+    %
+    %       is_affect: A [n-by-1] vector of 0s and 1s.
+    %       1 = problematic behavior
+    %       0 = nonproblematic behavior
     %
     %       tree_num: an integer that represents the number of trees the
     %       model needs to contain when training. If false, then it is set
     %       to default (100 trees)
+    %
+    %       hold_out: a decimal between (0,1) that represent the percentage
+    %       of data that's held out for testing
+    %
+    %       feature_names: a list containing names of all variables in order of columns.
+    %       if list is nonempty: feature importance plot is needed, graphed
+    %       in the order of variable names in the list given.
+    %       if list is empty: feature importance plot is not needed.
+    %
     %   outputs:
     %       maccu: model accuracy, in percentage
     %       an additional feature importance plot
@@ -27,7 +40,9 @@ function maccu = random_forest(mdata, tree_num)
 
     %convert matrix to table
     hr_data=array2table(mdata);
-    hr_data.Properties.VariableNames(1:8) = {'time','bpm','rr','rmssd','sdsd','sdnn','pnnx','is_affect'};
+
+    p_data=array2table(is_affect);
+    hr_data=[hr_data,p_data];
 
 
     %fill in NaNs in time & 0 in bpm
@@ -43,7 +58,7 @@ function maccu = random_forest(mdata, tree_num)
 
 
     %training the model
-    cv=cvpartition(size(hr_data,1),'HoldOut',0.2);
+    cv=cvpartition(size(hr_data,1),'HoldOut', hold_out);
     index=cv.test;
     dTrain=hr_data(~index,2:end);
     dTest=hr_data(index,2:end);
@@ -54,16 +69,25 @@ function maccu = random_forest(mdata, tree_num)
     %accuracy of prediction (this part I looked up)
     maccu=(sum(prediction==table2array(dTest(:,end)))/size(dTest,1))*100
 
-    %feature importance
-    feature_importance=oobPermutedPredictorImportance(model);
-    figure
-    bar(feature_importance)
-    title('Feature Importance Estimates')
-    xlabel('Predictor variable')
-    ylabel('Importance')
-    h=gca;
-    h.XTickLabel=model.PredictorNames;
-    h.XTickLabelRotation=45;
-    h.TickLabelInterpreter='none';
+
+    %prompt if feature importance plot is needed
+    if feature_names
+        
+        size = size(hr_data)-1;  %since hr_data has is_affect, need to exclude
+        hr_data.Properties.VariableNames(1) = {'time'};
+        hr_data.Properties.VariableNames(2:size-1) = feature_names;
+
+        %feature importance
+        feature_importance=oobPermutedPredictorImportance(model);
+        figure
+        bar(feature_importance)
+        title('Feature Importance Estimates')
+        xlabel('Predictor variable')
+        ylabel('Importance')
+        h=gca;
+        h.XTickLabel=model.PredictorNames;
+        h.XTickLabelRotation=45;
+        h.TickLabelInterpreter='none';
+    end
 
 end

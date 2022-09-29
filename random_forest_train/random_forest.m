@@ -1,5 +1,5 @@
 
-function maccu = random_forest(mdata, is_affect, tree_num, hold_out, feature_names)
+function [maccu, mprecision, mrecall, c_matrix] = random_forest(mdata, is_affect, tree_num, hold_out, feature_names)
     %creates a random forest model from the given data & number of trees
     %returns the percent accuracy of the model (maccu) & a feature
     %importance plot
@@ -28,7 +28,15 @@ function maccu = random_forest(mdata, is_affect, tree_num, hold_out, feature_nam
     %
     %   outputs:
     %       maccu: model accuracy, in percentage
-    %       an additional feature importance plot
+    % 
+    %       mprecision: precision of the classification model
+    %
+    %       mrecall: recall of the classification model
+    %
+    %       c_matrix: confusion matrix in the form 
+    %           [True Positives False Negatives, False Positives True Negatives]
+    %
+    %       OPTIONAL: a feature importance plot
 
 
     %determine num of trees
@@ -69,6 +77,27 @@ function maccu = random_forest(mdata, is_affect, tree_num, hold_out, feature_nam
     %accuracy of prediction (this part I looked up)
     maccu=(sum(prediction==table2array(dTest(:,end)))/size(dTest,1))*100
 
+    %precision, recall, confusion matrix
+    dTest_array = table2array(dTest);
+    TP=0;
+    TN=0;
+    FP=0;
+    FN=0;
+    for row=1:size(dTest,1)
+        if(prediction(row,end)==1 && dTest_array(row,end)==1)
+            TP = TP+1;
+        elseif(prediction(row,end)==1 && dTest_array(row,end)==0)
+            FP = FP+1;
+        elseif(prediction(row,end)==0 && dTest_array(row,end)==1)
+            FN = FN+1;
+        elseif(prediction(row,end)==0 && dTest_array(row,end)==0)
+            TN = TN+1;
+        end
+    end
+
+    mprecision = TP / (TP+FP)
+    mrecall = TP / (TP + FN)
+    c_matrix = [TP FN, FP TN]
 
     %prompt if feature importance plot is needed
     if feature_names

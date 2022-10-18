@@ -1,4 +1,3 @@
-
 function [maccu, mprecision, mrecall, c_matrix] = random_forest(mdata, is_affect, tree_num, hold_out, feature_names)
     %creates a random forest model from the given data & number of trees
     %returns the percent accuracy of the model (maccu) & a feature
@@ -75,7 +74,7 @@ function [maccu, mprecision, mrecall, c_matrix] = random_forest(mdata, is_affect
     prediction=predict(model,testing);
 
     %accuracy of prediction (this part I looked up)
-    maccu=(sum(prediction==table2array(dTest(:,end)))/size(dTest,1))*100
+    maccu=(sum(prediction==table2array(dTest(:,end)))/size(dTest,1))*100;
 
     %precision, recall, confusion matrix
     dTest_array = table2array(dTest);
@@ -95,16 +94,16 @@ function [maccu, mprecision, mrecall, c_matrix] = random_forest(mdata, is_affect
         end
     end
 
-    mprecision = TP / (TP+FP)
-    mrecall = TP / (TP + FN)
-    c_matrix = [TP FN, FP TN]
+    mprecision = TP / (TP+FP);
+    mrecall = TP / (TP + FN);
+    c_matrix = [TP FN, FP TN];
 
     %prompt if feature importance plot is needed
-    if feature_names
+    if ~isempty(feature_names)
         
-        size = size(hr_data)-1;  %since hr_data has is_affect, need to exclude
+        si = size(hr_data,2)-1;  %since hr_data has is_affect, need to exclude
         hr_data.Properties.VariableNames(1) = {'time'};
-        hr_data.Properties.VariableNames(2:size-1) = feature_names;
+        hr_data.Properties.VariableNames(2:si) = feature_names;
 
         %feature importance
         feature_importance=oobPermutedPredictorImportance(model);
@@ -114,7 +113,7 @@ function [maccu, mprecision, mrecall, c_matrix] = random_forest(mdata, is_affect
         xlabel('Predictor variable')
         ylabel('Importance')
         h=gca;
-        h.XTickLabel=model.PredictorNames;
+        h.XTickLabel=hr_data.Properties.VariableNames(2:end-1);
         h.XTickLabelRotation=45;
         h.TickLabelInterpreter='none';
     end
